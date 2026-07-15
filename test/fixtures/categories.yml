@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Adventure
+  description: Games focused on exploration and story
+
+two:
+  name: Shooter
+  description: Fast-paced shooting games
