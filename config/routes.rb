@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  # Documenación http://127.0.0.1:3000/api-docs
   get "/api-docs/api-docs", to: redirect("/index.html")
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
@@ -13,7 +14,6 @@ Rails.application.routes.draw do
   post "register", to: "auth#register_user"
   post "login", to: "auth#login_user"
 
-  post "admin/register", to: "auth#register_admin"
   post "admin/login", to: "auth#login_admin"
 
   get "/genres", to: "games#genres"

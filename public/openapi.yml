@@ -1,0 +1,975 @@
+openapi: 3.0.3
+
+info:
+  title: PixelVault API
+  version: 1.0.5
+  summary: REST API para el catálogo de videojuegos PixelVault.
+  description: |
+    API REST desarrollada con Ruby on Rails para gestionar el catálogo de videojuegos de PixelVault.
+
+    ### Características
+
+    - Autenticación JWT para usuarios y administradores.
+    - CRUD de categorías (solo administradores pueden actualizar y crear).
+    - Sistema de favoritos por usuario.
+    - Integración con la API de RAWG.
+    - Respuestas JSON.
+
+    ### Autenticación
+
+    Los endpoints protegidos requieren un token JWT.
+
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    Primero inicia sesión mediante alguno de estos endpoints:
+
+    - `/login`
+    - `/admin/login`
+
+servers:
+  - url: http://127.0.0.1:3000
+    description: Desarrollo
+
+externalDocs:
+  description: Repositorio del proyecto
+  url: https://github.com/
+
+tags:
+  - name: Auth
+    description: |
+      Registro e inicio de sesión para usuarios. Inicio de sesión para administradores.
+
+  - name: Categories
+    description: |
+      Administración de categorías.
+      (Crear, editar y eliminar requiere permisos de administrador).
+
+  - name: Favorites
+    description: |
+      Gestión de videojuegos favoritos del usuario autenticado.
+
+  - name: Games
+    description: |
+      Consulta del catálogo obtenido desde RAWG API.
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT.
+        Ejemplo:
+        ```
+        Authorization: Bearer eyJhbGciOiJIUzI1...
+        ```
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        name:
+          type: string
+          example: Juan Pérez
+
+        email:
+          type: string
+          format: email
+          example: juan@test.com
+
+    Admin:
+      type: object
+      required:
+        - id
+        - name
+        - email
+
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Administrador
+        email:
+          type: string
+          format: email
+          example: admin@pixelvault.com
+
+    Category:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          example: 2
+        name:
+          type: string
+          example: RPG
+        description:
+          type: string
+          example: Juegos de rol.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Favorite:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 3
+        game_id:
+          type: integer
+          example: 12
+        category_id:
+          type: integer
+          nullable: true
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GameListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 894321
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'
+
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3498
+        name:
+          type: string
+          example: Grand Theft Auto V
+        released:
+          type: string
+          format: date
+          nullable: true
+        background_image:
+          type: string
+          format: uri
+          nullable: true
+        rating:
+          type: number
+          format: float
+          example: 4.47
+        ratings_count:
+          type: integer
+          example: 7500
+        metacritic:
+          type: integer
+          nullable: true
+          example: 97
+        playtime:
+          type: integer
+          example: 74
+
+    Pagination:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 842315
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+
+    Genre:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 4
+        name:
+          type: string
+          example: Action
+        slug:
+          type: string
+          example: action
+
+    Platform:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: PC
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - password_confirmation
+      properties:
+        name:
+          type: string
+          example: Juan Pérez
+        email:
+          type: string
+          format: email
+          example: juan@test.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: password123
+        password_confirmation:
+          type: string
+          format: password
+          example: password123
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: juan@test.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    UserAuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    AdminAuthResponse:
+      type: object
+      properties:
+        admin:
+          $ref: '#/components/schemas/Admin'
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Validation failed
+        errors:
+          type: array
+          items:
+            type: string
+          example:
+            ...
+
+  responses:
+    Unauthorized:
+      description: Usuario no autenticado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unauthorized
+
+    Forbidden:
+      description: No tiene permisos para realizar esta acción.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Forbidden
+
+    NotFound:
+      description: Recurso no encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Not found
+
+    ValidationError:
+      description: Error de validación.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: ...
+
+    InternalServerError:
+      description: Error interno del servidor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Internal server error
+
+paths:
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Registrar usuario
+      description: Crea una nueva cuenta de usuario y devuelve un JWT. También acepta el cuerpo envuelto en `auth`.
+      operationId: registerUser
+      security: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+
+      responses:
+        '201':
+          description: Usuario registrado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAuthResponse'
+              example:
+                user:
+                  id: 1
+                  name: Juan Pérez
+                  email: juan@test.com
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Iniciar sesión
+      description: |
+        Autentica un usuario mediante email y contraseña.
+      operationId: loginUser
+      security: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+
+      responses:
+        '200':
+          description: Login exitoso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAuthResponse'
+              example:
+                user:
+                  id: 1
+                  name: Juan Pérez
+                  email: juan@test.com
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+        '401':
+          description: Credenciales inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid credentials
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/login:
+    post:
+      tags:
+        - Auth
+      summary: Iniciar sesión como administrador
+      description: |
+        Autentica un administrador mediante email y contraseña.
+      operationId: loginAdmin
+      security: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@pixelvault.com
+              password: admin123
+
+      responses:
+        '200':
+          description: Login exitoso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAuthResponse'
+              example:
+                admin:
+                  id: 1
+                  name: Administrador
+                  email: admin@pixelvault.com
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /categories:
+    post:
+      tags:
+        - Categories
+      summary: Crear categoría
+      description: |
+        Crea una nueva categoría.
+        **Solo administradores.**
+      operationId: createCategory
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: Terminados
+                description:
+                  type: string
+                  example: Juegos que he completado
+            example:
+              name: Terminados
+              description: Juegos que he completado
+
+      responses:
+        '201':
+          description: Categoría creada correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+              example:
+                id: 5
+                name: Terminados
+                description: Juegos que he completado
+                created_at: "2025-01-10T15:30:00Z"
+                updated_at: "2025-01-10T15:30:00Z"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Categories
+      summary: Obtener categorías
+      description: |
+        Devuelve todas las categorías registradas.
+      operationId: listCategories
+      security: []
+
+      responses:
+        '200':
+          description: Lista de categorías.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              example:
+                - id: 1
+                  name: RPG
+                  description: Juegos de rol
+                  created_at: "2025-01-10T15:30:00Z"
+                  updated_at: "2025-01-10T15:30:00Z"
+                - id: 2
+                  name: Shooter
+                  description: Juegos de disparos
+                  created_at: "2025-01-10T15:30:00Z"
+                  updated_at: "2025-01-10T15:30:00Z"
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /categories/{id}:
+    put:
+      tags:
+        - Categories
+      summary: Actualizar categoría
+      description: |
+        Actualiza una categoría existente.
+        **Solo administradores.**
+      operationId: updateCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Action RPG
+                description:
+                  type: string
+                  example: Acción y rol.
+            example:
+              name: Action RPG
+              description: Acción y rol.
+
+      responses:
+        '200':
+          description: Categoría actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+              example:
+                id: 1
+                name: Action RPG
+                description: Acción y rol.
+                created_at: "2025-01-10T15:30:00Z"
+                updated_at: "2025-01-11T10:45:00Z"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Categories
+      summary: Eliminar categoría
+      description: |
+        Elimina una categoría existente.
+        **Solo administradores.**
+      operationId: deleteCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+
+      responses:
+        '204':
+          description: Categoría eliminada correctamente.
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /favorites:
+    get:
+      tags:
+        - Favorites
+      summary: Obtener favoritos
+      description: |
+        Devuelve la lista de juegos marcados como favoritos por el usuario autenticado.
+      operationId: listFavorites
+
+      responses:
+        '200':
+          description: Lista de favoritos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Favorite'
+              example:
+                - id: 1
+                  user_id: 3
+                  game_id: 12
+                  created_at: "2025-01-10T15:30:00Z"
+                  updated_at: "2025-01-10T15:30:00Z"
+                - id: 2
+                  user_id: 3
+                  game_id: 18
+                  created_at: "2025-01-12T09:15:00Z"
+                  updated_at: "2025-01-12T09:15:00Z"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Favorites
+      summary: Agregar favorito
+      description: |
+        Agrega un juego a la lista de favoritos del usuario autenticado.
+      operationId: createFavorite
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - game_id
+              properties:
+                game_id:
+                  type: integer
+                  example: 12
+            example:
+              game_id: 12
+
+      responses:
+        '201':
+          description: Favorito creado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorite'
+              example:
+                id: 3
+                user_id: 3
+                game_id: 12
+                created_at: "2025-01-15T14:20:00Z"
+                updated_at: "2025-01-15T14:20:00Z"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /favorites/{id}:
+    delete:
+      tags:
+        - Favorites
+      summary: Eliminar favorito
+      description: |
+        Elimina un juego de la lista de favoritos del usuario autenticado.
+        El parámetro **id** corresponde al **game_id**, no al id del registro de Favorite.
+      operationId: deleteFavorite
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 12
+
+      responses:
+        '204':
+          description: Favorito eliminado correctamente.
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Favorites
+      summary: Actualizar categoría de un favorito
+      description: |
+        Actualiza la categoría de un favorito existente.
+        El parámetro **id** corresponde al **game_id**, no al id del registro de Favorite.
+        Si se envía `category_id: null` se elimina la categoría asignada.
+      operationId: updateFavorite
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 12
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category_id:
+                  type: integer
+                  nullable: true
+                  example: 5
+            example:
+              category_id: 5
+
+      responses:
+        '200':
+          description: Favorito actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorite'
+              example:
+                id: 1
+                user_id: 3
+                game_id: 12
+                category_id: 5
+                created_at: "2025-01-10T15:30:00Z"
+                updated_at: "2025-01-15T16:00:00Z"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /games:
+    get:
+      tags:
+        - Games
+      summary: Obtener juegos
+      description: |
+        Obtiene una lista de juegos desde la API de RAWG.
+        Permite filtrar por nombre, género y plataforma, además de paginar los resultados.
+      operationId: listGames
+      security: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Zelda
+        - name: genre
+          in: query
+          required: false
+          schema:
+            type: string
+          example: action
+        - name: platform
+          in: query
+          required: false
+          schema:
+            type: string
+          example: 4
+
+      responses:
+        '200':
+          description: Lista de juegos obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameListResponse'
+
+        '500':
+          description: Error interno al obtener el juego.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{id}:
+    get:
+      tags:
+        - Games
+      summary: Obtener un juego
+      description: |
+        Obtiene la información detallada de un juego desde la API de RAWG.
+      operationId: getGame
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 3498
+
+      responses:
+        '200':
+          description: Información del juego.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+
+        '500':
+          description: Error interno al obtener el juego.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /genres:
+    get:
+      tags:
+        - Games
+      summary: Obtener géneros
+      description: Obtiene la lista de géneros disponibles desde la API de RAWG.
+      operationId: listGenres
+      security: []
+
+      responses:
+        '200':
+          description: Lista de géneros.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+              example:
+                - id: 4
+                  name: Action
+                  slug: action
+                - id: 5
+                  name: Adventure
+                  slug: adventure
+
+        '500':
+          description: Error al obtener los géneros.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /platforms:
+    get:
+      tags:
+        - Games
+      summary: Obtener plataformas
+      description: Obtiene la lista de plataformas disponibles desde la API de RAWG.
+      operationId: listPlatforms
+      security: []
+
+      responses:
+        '200':
+          description: Lista de plataformas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Platform'
+              example:
+                - id: 1
+                  name: PC
+                - id: 2
+                  name: PlayStation
+
+        '500':
+          description: Error al obtener las plataformas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

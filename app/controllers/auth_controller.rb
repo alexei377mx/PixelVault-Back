@@ -19,16 +19,6 @@ class AuthController < ApplicationController
     end
   end
 
-  def register_admin
-    admin = AdminUser.new(admin_params)
-    if admin.save
-      token = JsonWebToken.encode({ user_id: admin.id, type: "AdminUser" })
-      render json: { admin: serialize_admin(admin), token: token }, status: :created
-    else
-      render json: { errors: admin.errors.full_messages }, status: :unprocessable_entity
-    end
-  end
-
   def login_admin
     admin = AdminUser.find_by(email: params[:email])
     if admin&.authenticate(params[:password])
