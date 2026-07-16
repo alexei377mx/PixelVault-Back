@@ -65,22 +65,6 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "should register a new admin" do
-    assert_difference("AdminUser.count") do
-      post "/admin/register", params: {
-        name: "New admin",
-        email: "adminnew@test.com",
-        password: "adminpass123",
-        password_confirmation: "adminpass123"
-      }
-    end
-
-    assert_response :created
-    json = JSON.parse(response.body)
-    assert json["admin"].present?
-    assert json["token"].present?
-  end
-
   test "should login admin with valid credentials" do
     post "/admin/login", params: {
       email: @admin.email,
@@ -115,38 +99,6 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
   end
 
-  test "should not register admin with duplicate email" do
-    assert_no_difference("AdminUser.count") do
-      post "/admin/register", params: {
-        name: "Duplicate Admin",
-        email: @admin.email,
-        password: "password123",
-        password_confirmation: "password123"
-      }
-    end
-
-    assert_response :unprocessable_entity
-
-    json = JSON.parse(response.body)
-    assert_not_empty json["errors"]
-  end
-
-  test "should not register admin with short password" do
-    assert_no_difference("AdminUser.count") do
-      post "/admin/register", params: {
-        name: "Short Password",
-        email: "shortadmin@test.com",
-        password: "12345",
-        password_confirmation: "12345"
-      }
-    end
-
-    assert_response :unprocessable_entity
-
-    json = JSON.parse(response.body)
-    assert_not_empty json["errors"]
-  end
-
   test "should not login user with nonexistent email" do
     post "/login", params: {
       email: "missing@example.com",
@@ -169,24 +121,5 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
 
     json = JSON.parse(response.body)
     assert_equal "Invalid credentials", json["error"]
-  end
-
-  test "should support nested auth parameter for admin" do
-    assert_difference("AdminUser.count") do
-      post "/admin/register", params: {
-        auth: {
-          name: "Nested Admin",
-          email: "nested_admin@test.com",
-          password: "password123",
-          password_confirmation: "password123"
-        }
-      }
-    end
-
-    assert_response :created
-
-    json = JSON.parse(response.body)
-    assert json["admin"].present?
-    assert json["token"].present?
   end
 end

@@ -34,7 +34,7 @@ servers:
 
 externalDocs:
   description: Repositorio del proyecto
-  url: https://github.com/
+  url: https://github.com/alexei377mx/PixelVault-Back
 
 tags:
   - name: Auth
