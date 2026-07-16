@@ -5,5 +5,5 @@ one:
   game_id: 1
 
 two:
-  user: one
+  user: two
   game_id: 2

@@ -37,12 +37,6 @@ class CategoryTest < ActiveSupport::TestCase
     assert_not category.save
   end
 
-  test "name should be unique ignoring case" do
-    @category.name = "Adventure"
-    duplicate = Category.new(name: "Adventure")
-    assert duplicate.valid? || duplicate.errors[:name].any?
-  end
-
   test "should destroy category" do
     assert_difference("Category.count", -1) do
       @category.destroy

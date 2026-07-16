@@ -47,4 +47,14 @@ class FavoriteTest < ActiveSupport::TestCase
       assert_not duplicate.persisted?
     end
   end
+
+  test "should be valid without category" do
+    @favorite.category = nil
+    assert @favorite.valid?
+  end
+
+  test "should allow assigning a category" do
+    @favorite.category = categories(:one)
+    assert @favorite.valid?
+  end
 end

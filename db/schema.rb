@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_15_190402) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_15_220237) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,11 +31,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190402) do
   end
 
   create_table "favorites", force: :cascade do |t|
+    t.bigint "category_id"
     t.datetime "created_at", null: false
     t.integer "game_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["category_id"], name: "index_favorites_on_category_id"
     t.index ["game_id"], name: "index_favorites_on_game_id"
+    t.index ["user_id", "game_id"], name: "index_favorites_on_user_id_and_game_id", unique: true
     t.index ["user_id"], name: "index_favorites_on_user_id"
   end
 
@@ -48,5 +51,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190402) do
     t.index ["email"], name: "index_users_on_email"
   end
 
+  add_foreign_key "favorites", "categories"
   add_foreign_key "favorites", "users"
 end
